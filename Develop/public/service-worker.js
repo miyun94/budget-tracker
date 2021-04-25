@@ -16,7 +16,7 @@ const FILES_TO_CACHE = [
     "./icons/icon-384x384.png",
     "./icons/icon-512x512.png"
   ];
-  
+
 
 // Install the service worker
 self.addEventListener('install', function(evt) {
@@ -26,7 +26,21 @@ self.addEventListener('install', function(evt) {
         return cache.addAll(FILES_TO_CACHE);
       })
     );
-    // self.skipWaiting();
+  });
+
+  self.addEventListener('activate', function(evt) {
+    evt.waitUntil(
+      caches.keys().then(keyList => {
+        return Promise.all(
+          keyList.map(key => {
+            if (key !== CACHE_NAME && key !== DATA_CACHE_NAME) {
+              console.log('Removing old cache data', key);
+              return caches.delete(key);
+            }
+          })
+        );
+      })
+    );
   });
 
   // Intercept fetch requests
@@ -65,30 +79,4 @@ self.addEventListener('install', function(evt) {
         });
       })
     );
-  });
-
-  // Activate the service worker and remove old data from the cache
-  self.addEventListener('activate', function(evt) {
-    evt.waitUntil(
-      caches.keys().then(keyList => {
-        let cacheKeyList = keyList.filter(key => {
-            return key.indexOf('my-site-cache'); 
-        })
-        cacheKeyList.push(CACHE_NAME)
-
-        return Promise.all(
-          keyList.map((key, i) => {
-              if (cacheKeyList.indexOf(key) === -1) {
-                  console.log('Deleting old cache' + keyList[i]); 
-                  return caches.delete(keyList[i]); 
-              }
-            // if (key !== CACHE_NAME && key !== DATA_CACHE_NAME) {
-            //   console.log('Removing old cache data', key);
-            //   return caches.delete(key);
-            // }
-          })
-        );
-      })
-    );
-    // self.clients.claim();
   });
